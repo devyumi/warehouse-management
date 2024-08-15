@@ -1,10 +1,12 @@
 package domain;
 
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Getter
+@Data
+@Builder
 public class Warehouse {
     private Integer id;
     private User user;

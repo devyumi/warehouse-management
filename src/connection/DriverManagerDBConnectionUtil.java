@@ -1,22 +1,40 @@
 package connection;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
-public class DBConnectionUtil {
-    private static final String dbUrl = "jdbc:mysql://localhost:3306/warehouse_management?serverTimezone=Asia/Seoul&characterEncoding=UTF-8";
-    private static final String dbUsername = "root";
-    private static final String dbPassword = "0000";
+public class DriverManagerDBConnectionUtil {
+    private static final DriverManagerDBConnectionUtil instance = new DriverManagerDBConnectionUtil();
+    private static String dbUrl;
+    private static String dbUsername;
+    private static String dbPassword;
 
-    public static Connection getConnection() {
-        try {
-            Connection con = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
-            con.setAutoCommit(false);
-            return con;
-        } catch (SQLException e) {
+    private DriverManagerDBConnectionUtil() {
+        Properties properties = new Properties();
+        String propertiesFilePath = "resources/application.properties";
+        try (InputStream input = new FileInputStream(propertiesFilePath)) {
+            properties.load(input);
+            dbUrl = properties.getProperty("database.url");
+            dbUsername = properties.getProperty("database.username");
+            dbPassword = properties.getProperty("database.password");
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+    }
+    public static DriverManagerDBConnectionUtil getInstance() {
+        return instance;
+    }
+
+    public Connection getConnection() {
+        try {
+            return DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+        } catch (SQLException e) {
+            throw new IllegalStateException(e.getMessage());
+        }
     }
 }
