@@ -1,6 +1,10 @@
 package dao;
 
+import domain.Stock;
 import dto.StockDto;
+import dto.StockEditDto;
+import exception.ErrorMessage;
+import exception.WarehouseException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -152,6 +156,79 @@ public class StockDao {
                 }
             }
             return stocks;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int saveStock(Connection con, Stock stock) {
+        String query = new StringBuilder()
+                .append("INSERT INTO stock (product_id, business_man_id, width, height, quantity, manufactured_date, expiration_date) VALUES ")
+                .append("(?, ?, ?, ?, ?, ?, ? ) ").toString();
+
+        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setInt(1, stock.getProduct().getId());
+            pstmt.setInt(2, stock.getUser().getId());
+            pstmt.setDouble(3, stock.getWidth());
+            pstmt.setDouble(4, stock.getHeight());
+            pstmt.setInt(5, stock.getQuantity());
+            pstmt.setTimestamp(6, java.sql.Timestamp.valueOf(stock.getManufacturedDate()));
+            pstmt.setTimestamp(7, java.sql.Timestamp.valueOf(stock.getExpirationDate()));
+
+            if (pstmt.executeUpdate() == 1) {
+                con.commit();
+                System.out.println("재고가 등록되었습니다.");
+                return 1;
+            } else {
+                throw new WarehouseException(ErrorMessage.INSERT_STOCK_FAIL);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int updateStock(Connection con, StockEditDto request) {
+        String query = new StringBuilder()
+                .append("UPDATE stock ")
+                .append("SET quantity = ? , manufactured_date = ? , expiration_date = ? ")
+                .append("WHERE id = ? ").toString();
+
+        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+
+            pstmt.setInt(1, request.getQuantity());
+            pstmt.setTimestamp(2, java.sql.Timestamp.valueOf(request.getManufacturedDate()));
+            pstmt.setTimestamp(3, java.sql.Timestamp.valueOf(request.getExpirationDate()));
+            pstmt.setInt(4, request.getId());
+
+            if (pstmt.executeUpdate() == 1) {
+                con.commit();
+                System.out.println("재고 내역이 수정되었습니다.");
+                return 1;
+            } else {
+                throw new WarehouseException(ErrorMessage.UPDATE_STOCK_FAIL);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int deleteStock(Connection con, int stockId) {
+        String query = new StringBuilder()
+                .append("DELETE FROM stock ")
+                .append("WHERE id = ? ").toString();
+
+        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+            pstmt.setInt(1, stockId);
+
+
+            if (pstmt.executeUpdate() == 1) {
+                con.commit();
+                System.out.println("재고 내역이 삭제되었습니다.");
+                return 1;
+            } else {
+                throw new WarehouseException(ErrorMessage.DELETE_STOCK_FAIL);
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
