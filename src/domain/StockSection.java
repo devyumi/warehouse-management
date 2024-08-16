@@ -1,8 +1,10 @@
 package domain;
 
-import lombok.Getter;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter
+@Data
+@Builder
 public class StockSection {
     private Integer id;
     private Warehouse warehouse;

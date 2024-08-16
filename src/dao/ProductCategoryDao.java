@@ -1,6 +1,5 @@
 package dao;
 
-import connection.DriverManagerDBConnectionUtil;
 import domain.ProductCategory;
 
 import java.sql.Connection;
@@ -12,7 +11,7 @@ import java.util.List;
 
 public class ProductCategoryDao {
 
-    public List<ProductCategory> findByParentIdIsNull() {
+    public List<ProductCategory> findByParentIdIsNull(Connection con) {
         String query = new StringBuilder()
                 .append("SELECT id, name ")
                 .append("FROM product_category ")
@@ -20,11 +19,8 @@ public class ProductCategoryDao {
 
         List<ProductCategory> categories = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
-            con = DriverManagerDBConnectionUtil.getConnection();
-            con.setReadOnly(true);
 
             while (rs.next()) {
                 categories.add(ProductCategory.builder()
@@ -35,12 +31,10 @@ public class ProductCategoryDao {
             return categories;
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<ProductCategory> findByParentId(Integer parentId) {
+    public List<ProductCategory> findByParentId(Connection con, Integer parentId) {
         String query = new StringBuilder()
                 .append("SELECT id, name ")
                 .append("FROM product_category ")
@@ -48,11 +42,7 @@ public class ProductCategoryDao {
 
         List<ProductCategory> categories = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getConnection();
-            con.setReadOnly(true);
-
             pstmt.setInt(1, parentId);
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -64,18 +54,6 @@ public class ProductCategoryDao {
                 }
             }
             return categories;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
-        }
-    }
-
-    private void connectionClose(Connection con) {
-        try {
-            if (con != null) {
-                con.close();
-            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

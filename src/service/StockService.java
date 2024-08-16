@@ -1,5 +1,6 @@
 package service;
 
+import connection.DriverManagerDBConnectionUtil;
 import dao.StockDao;
 import domain.ProductCategory;
 import domain.User;
@@ -8,6 +9,8 @@ import dto.StockDto;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.List;
 
@@ -17,7 +20,7 @@ public class StockService {
     private static final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
     /**
-     * 전체 재고 조회
+     * 재고 조회
      * 총 관리자: 전체 재고 내역 조회
      * 창고 관리자: 관리하는 창고의 재고만 조회
      * 사업자: 자신의 재고만 조회
@@ -25,19 +28,28 @@ public class StockService {
      * @User: 총 관리자, 창고 관리자, 사업자
      */
     public void findStocks(User user) {
-        switch (user.getRoleType().toString()) {
+        Connection con = null;
+        try {
+            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
+            con.setReadOnly(true);
 
-            case "ADMIN" -> {
-                printStocks(stockDao.findAll());
-            }
+            switch (user.getRoleType().toString()) {
+                case "ADMIN" -> {
+                    printStocks(stockDao.findAll(con));
+                }
 
-            case "WAREHOUSE_MANAGER" -> {
-                printStocks(stockDao.findByManagerId(user.getId()));
-            }
+                case "WAREHOUSE_MANAGER" -> {
+                    printStocks(stockDao.findByManagerId(con, user.getId()));
+                }
 
-            case "BUSINESS_MAN" -> {
-                printStocks(stockDao.findByBusinessManId(user.getId()));
+                case "BUSINESS_MAN" -> {
+                    printStocks(stockDao.findByBusinessManId(con, user.getId()));
+                }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            connectionClose(con);
         }
     }
 
@@ -47,39 +59,60 @@ public class StockService {
      * @User: 총 관리자, 창고 관리자, 사업자
      */
     public void findStocksByCategories() throws IOException {
-        //대분류 선택
-        System.out.println("대분류를 선택해주세요.");
-        int mainCategoryId = createValidMainCategoryId();
-        stockDao.findByParentId(mainCategoryId);
+        Connection con = null;
+        try {
+            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
+            con.setReadOnly(true);
 
-        //중분류 선택
-        Loop:
-        while (true) {
-            System.out.println("1. 중분류 선택 | 2. 나가기");
-            int input = Integer.parseInt(br.readLine());
-            if (input == 1) {
-                System.out.println("중분류를 선택해주세요.");
-                int subCategoryId = createValidSubCategoryId(mainCategoryId);
-                stockDao.findByParentId(subCategoryId);
+            //대분류 선택
+            System.out.println("\n대분류를 선택하세요.");
+            int mainCategoryId = createValidMainCategoryId();
+            printStocks(stockDao.findByParentId(con, mainCategoryId));
 
-                //소분류 선택
-                while (true) {
-                    System.out.println("1. 소분류 선택 | 2. 나가기");
-                    input = Integer.parseInt(br.readLine());
-                    if (input == 1) {
-                        System.out.println("소분류를 선택해세요.");
-                        stockDao.findByParentId(createValidSubCategoryId(subCategoryId));
-                    } else if (input == 2) {
-                        break Loop;
-                    } else {
-                        System.out.println("잘못된 번호입니다.");
-                    }
+            //중분류 선택
+            Loop:
+            while (true) {
+                System.out.println("\n1. 중분류 선택 | 2. 나가기");
+                String input = br.readLine();
+
+                if(isNotNumber(input)) {
+                    System.out.println("숫자가 아닙니다.");
+                    continue;
                 }
-            } else if (input == 2) {
-                break;
-            } else {
-                System.out.println("잘못된 번호입니다.");
+                if (Integer.parseInt(input) == 1) {
+                    System.out.println("\n중분류를 선택하세요.");
+                    int subCategoryId = createValidSubCategoryId(mainCategoryId);
+                    printStocks(stockDao.findByParentId(con, subCategoryId));
+
+                    //소분류 선택
+                    while (true) {
+                        System.out.println("\n1. 소분류 선택 | 2. 나가기");
+                        input = br.readLine();
+
+                        if(isNotNumber(input)) {
+                            System.out.println("숫자가 아닙니다.");
+                            continue;
+                        }
+                        if (Integer.parseInt(input) == 1) {
+                            System.out.println("\n소분류를 선택하세요.");
+                            printStocks(stockDao.findByParentId(con, createValidSubCategoryId(subCategoryId)));
+                            break Loop;
+                        } else if (Integer.parseInt(input) != 2) {
+                            System.out.println("\n잘못된 번호입니다.");
+                            continue;
+                        }
+                        break Loop;
+                    }
+                } else if (Integer.parseInt(input) == 2) {
+                    break;
+                } else {
+                    System.out.println("잘못된 번호입니다.");
+                }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            connectionClose(con);
         }
     }
 
@@ -87,14 +120,18 @@ public class StockService {
         while (true) {
             List<ProductCategory> categories = productCategoryService.findMainCategories();
             printCategories(categories);
-            System.out.print("번호 입력: ");
+            System.out.print("\n번호 입력: ");
 
-            int categoryId = Integer.parseInt(br.readLine());
+            String categoryId = br.readLine();
 
+            if (isNotNumber(categoryId)) {
+                System.out.println("숫자가 아닙니다.");
+                continue;
+            }
             if (categories.stream()
                     .map(ProductCategory::getId)
-                    .anyMatch(n -> n == categoryId)) {
-                return categoryId;
+                    .anyMatch(n -> n == Integer.parseInt(categoryId))) {
+                return Integer.parseInt(categoryId);
             } else {
                 System.out.println("잘못된 입력입니다.");
             }
@@ -105,49 +142,81 @@ public class StockService {
         while (true) {
             List<ProductCategory> categories = productCategoryService.findSubCategories(parentId);
             printCategories(categories);
-            System.out.print("번호 입력: ");
+            System.out.print("\n번호 입력: ");
 
-            int categoryId = Integer.parseInt(br.readLine());
+            String categoryId = br.readLine();
 
+            if (isNotNumber(categoryId)) {
+                System.out.println("숫자가 아닙니다.");
+                continue;
+            }
             if (categories.stream()
                     .map(ProductCategory::getId)
-                    .anyMatch(n -> n == categoryId)) {
-                return categoryId;
+                    .anyMatch(n -> n == Integer.parseInt(categoryId))) {
+                return Integer.parseInt(categoryId);
             } else {
                 System.out.println("잘못된 입력입니다.");
             }
         }
     }
 
+    /**
+     * 숫자를 입력 받을 때 문자, 공백, 특수문자가 포함되어 있는지 확인함
+     */
+    private boolean isNotNumber(String input) {
+        return input.matches("^[a-zA-Z가-힣]*$") ||
+                input.matches("^[!@#$%^&*()\\[\\]\\-_+=|/\\?><.,~`;:'\"]*$") ||
+                input.matches("^[\\t\\n\\f\\r\\s]*$");
+    }
+
     private void printStocks(List<StockDto> stocks) {
-        System.out.print("\n\n" + "*".repeat(80) + " [재고 현황] " + "*".repeat(80) + "\n");
-        System.out.println("-".repeat(170));
-        System.out.printf("%-5s| %-10s | %-20s | %-20s | %-20s | %-20s | %-20s | %-20s | %-20s | %-20s | %-20s\n",
-                "번호", "제품코드", "제품명", "창고위치", "재고위치", "원가", "수량", "제조일자", "유효기간", "제조사", "공급처명");
-        System.out.println("-".repeat(170));
+        System.out.print("\n\n[재고 현황]\n");
+        System.out.println("-".repeat(200));
+        System.out.printf("%-5s | %-10s | %-45s| %-15s | %-15s | %-20s | %-10s | %-20s | %-20s\n",
+                "번호", "제품코드", "제품명", "창고위치", "재고위치", "원가", "수량", "제조일자", "유효기간");
+        System.out.println("-".repeat(200));
 
         for (StockDto stock : stocks) {
-            System.out.printf("%-5d | %-10s | %-25s | %-20s | %-20s | %10s원 | %-10d | %d-%d-%d %d:%d:%d | %d-%d-%d %d:%d:%d | %-15s | %-15s\n",
-                    stock.getId(), stock.getProductCode(), stock.getProductName(), stock.getVendorName(), stock.getSectionName(),
-                    new DecimalFormat("###,###").format(stock.getCostPrice()), stock.getQuantity(),
+            System.out.printf("%-10d%-15s%-45s%-20s%-20s%-20s%-20s%-1d.%-1d.%-1d %-1d:%-1d:%-10d%-1d.%-1d.%-1d %-1d:%-1d:%-1d\n",
+                    stock.getId(), stock.getProductCode(), stock.getProductName(), stock.getWarehouseName(), stock.getSectionName(),
+                    new DecimalFormat("###,###원").format(stock.getCostPrice()), new DecimalFormat("###,###개").format(stock.getQuantity()),
                     stock.getManufacturedDate().getYear(), stock.getManufacturedDate().getMonthValue(), stock.getManufacturedDate().getDayOfMonth(),
                     stock.getManufacturedDate().getHour(), stock.getManufacturedDate().getMinute(), stock.getManufacturedDate().getSecond(),
                     stock.getExpirationDate().getYear(), stock.getExpirationDate().getMonthValue(), stock.getExpirationDate().getDayOfMonth(),
-                    stock.getExpirationDate().getHour(), stock.getExpirationDate().getMinute(), stock.getExpirationDate().getSecond(),
-                    stock.getManufacturer(), stock.getVendorName());
+                    stock.getExpirationDate().getHour(), stock.getExpirationDate().getMinute(), stock.getExpirationDate().getSecond());
         }
     }
 
     private void printCategories(List<ProductCategory> categories) {
-        System.out.print("\n\n" + "*".repeat(80) + " [분류 선택] " + "*".repeat(80) + "\n");
-        System.out.println("-".repeat(170));
+        System.out.print("\n\n[분류 선택]\n");
+        System.out.println("-".repeat(50));
         System.out.printf("%-5s| %-10s\n",
                 "번호", "분류명");
-        System.out.println("-".repeat(170));
+        System.out.println("-".repeat(50));
 
         for (ProductCategory category : categories) {
-            System.out.printf("%-5d | %-10s\n",
+            System.out.printf("%-10d%-10s\n",
                     category.getId(), category.getName());
+        }
+    }
+
+    private void transactionRollback(Connection con) {
+        try {
+            if (con != null) {
+                con.rollback();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void connectionClose(Connection con) {
+        try {
+            if (con != null) {
+                con.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }
