@@ -8,9 +8,4 @@ import lombok.Data;
 public class ExpenseCategory {
     private Integer id;
     private String name;
-
-    public ExpenseCategory(Integer id, String name) {
-        this.id = id;
-        this.name = name;
-    }
 }

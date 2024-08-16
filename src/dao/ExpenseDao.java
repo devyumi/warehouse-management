@@ -1,6 +1,5 @@
 package dao;
 
-import connection.DriverManagerDBConnectionUtil;
 import domain.Expense;
 import domain.ExpenseCategory;
 import domain.Warehouse;
@@ -20,7 +19,7 @@ import java.util.List;
 
 public class ExpenseDao {
 
-    public List<Expense> findAll() {
+    public List<Expense> findAll(Connection con) {
         String query = new StringBuilder()
                 .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
                 .append("FROM expense e ")
@@ -30,11 +29,8 @@ public class ExpenseDao {
 
         List<Expense> expenses = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
 
             while (rs.next()) {
                 expenses.add(Expense.builder()
@@ -54,12 +50,10 @@ public class ExpenseDao {
             return expenses;
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<Expense> findById(Integer userId) {
+    public List<Expense> findById(Connection con, Integer userId) {
         String query = new StringBuilder()
                 .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
                 .append("FROM expense e ")
@@ -71,11 +65,7 @@ public class ExpenseDao {
 
         List<Expense> expenses = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
-
             pstmt.setInt(1, userId);
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -98,12 +88,10 @@ public class ExpenseDao {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<Expense> findAllByCategory(Integer categoryId) {
+    public List<Expense> findAllByCategory(Connection con, Integer categoryId) {
         String query = new StringBuilder()
                 .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
                 .append("FROM expense e ")
@@ -114,10 +102,7 @@ public class ExpenseDao {
 
         List<Expense> expenses = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
 
             pstmt.setInt(1, categoryId);
 
@@ -141,12 +126,10 @@ public class ExpenseDao {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<Expense> findByCategory(Integer userId, Integer categoryId) {
+    public List<Expense> findByCategory(Connection con, Integer userId, Integer categoryId) {
         String query = new StringBuilder()
                 .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
                 .append("FROM expense e ")
@@ -158,10 +141,7 @@ public class ExpenseDao {
 
         List<Expense> expenses = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
 
             pstmt.setInt(1, userId);
             pstmt.setInt(2, categoryId);
@@ -186,12 +166,10 @@ public class ExpenseDao {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<Expense> findAllByYear(Integer year) {
+    public List<Expense> findAllByYear(Connection con, Integer year) {
         String query = new StringBuilder()
                 .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
                 .append("FROM expense e ")
@@ -202,11 +180,7 @@ public class ExpenseDao {
 
         List<Expense> expenses = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
-
             pstmt.setInt(1, year);
 
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -229,12 +203,10 @@ public class ExpenseDao {
             return expenses;
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<Expense> findByYear(Integer userId, Integer year) {
+    public List<Expense> findByYear(Connection con, Integer userId, Integer year) {
         String query = new StringBuilder()
                 .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
                 .append("FROM expense e ")
@@ -246,10 +218,7 @@ public class ExpenseDao {
 
         List<Expense> expenses = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
 
             pstmt.setInt(1, userId);
             pstmt.setInt(2, year);
@@ -274,28 +243,22 @@ public class ExpenseDao {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<ProfitDto> findProfits() {
+    public List<ProfitDto> findProfits(Connection con) {
         String query = new StringBuilder()
-                .append("SELECT w.id, w.name, contract_date, (price_per_area * capacity * contract_month) AS profit ")
+                .append("SELECT w.name, contract_date, (price_per_area * capacity * contract_month) AS profit ")
                 .append("FROM warehouse_contract wc ")
                 .append("JOIN warehouse w ON wc.warehouse_id = w.id ").toString();
 
         List<ProfitDto> profits = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
 
             while (rs.next()) {
                 profits.add(ProfitDto.builder()
-                        .id(rs.getInt("w.id"))
                         .name(rs.getString("w.name"))
                         .contractDate(rs.getDate("contract_date").toLocalDate())
                         .profit(rs.getDouble("profit"))
@@ -304,14 +267,12 @@ public class ExpenseDao {
             return profits;
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public List<ProfitDto> findProfitById(Integer userId) {
+    public List<ProfitDto> findProfitById(Connection con, Integer userId) {
         String query = new StringBuilder()
-                .append("SELECT w.id, w.name, contract_date, (price_per_area * capacity * contract_month) AS profit ")
+                .append("SELECT w.name, contract_date, (price_per_area * capacity * contract_month) AS profit ")
                 .append("FROM warehouse_contract wc ")
                 .append("JOIN warehouse w ON wc.warehouse_id = w.id ")
                 .append("JOIN User u ON w.manager_id = u.role_id ")
@@ -319,17 +280,12 @@ public class ExpenseDao {
 
         List<ProfitDto> profits = new ArrayList<>();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
-
             pstmt.setInt(1, userId);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     profits.add(ProfitDto.builder()
-                            .id(rs.getInt("w.id"))
                             .name(rs.getString("w.name"))
                             .contractDate(rs.getDate("contract_date").toLocalDate())
                             .profit(rs.getDouble("profit"))
@@ -339,12 +295,10 @@ public class ExpenseDao {
             return profits;
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public TotalAssetDto findTotalAsset() {
+    public TotalAssetDto findTotalAsset(Connection con) {
         String query = new StringBuilder()
                 .append("WITH year_sum_expense AS ( ")
                 .append("SELECT YEAR(expense_date) AS year1, SUM(expense_amount) AS sum_expense ")
@@ -361,14 +315,11 @@ public class ExpenseDao {
                 .append("JOIN year_sum_profit ysp ON yse.year1 = ysp.year2 ) ")
                 .append("SELECT sum_expense, sum_profit, net_profit, ")
                 .append("((SELECT net_profit FROM ranked WHERE rn = 2) - ")
-                .append("(SELECT net_profit FROM ranked WHERE rn = 1)) / (SELECT net_profit FROM ranked WHERE rn = 1) * 100 AS net_profit_per ")
+                .append("(SELECT net_profit FROM ranked WHERE rn = 1)) / (SELECT net_profit FROM ranked WHERE rn = 1) AS net_profit_per ")
                 .append("FROM ranked; ").toString();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query);
              ResultSet rs = pstmt.executeQuery()) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setReadOnly(true);
             rs.next();
             rs.next();
             return TotalAssetDto.builder()
@@ -377,23 +328,17 @@ public class ExpenseDao {
                     .netProfit(rs.getDouble("net_profit"))
                     .netProfitPer(rs.getDouble("net_profit_per"))
                     .build();
-        } catch (
-                SQLException e) {
+        } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public int saveExpense(ExpenseSaveDto request) {
+    public int saveExpense(Connection con, ExpenseSaveDto request) {
         String query = new StringBuilder()
-                .append("INSERT INTO expense (warehouse_id, expense_date, category_id, expense_amount, description, payment_method VALUES ")
+                .append("INSERT INTO expense (warehouse_id, expense_date, category_id, expense_amount, description, payment_method) VALUES ")
                 .append("(?, ?, ?, ?, ?, ? ) ").toString();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setAutoCommit(false);
 
             pstmt.setInt(1, request.getWarehouseId());
             pstmt.setDate(2, java.sql.Date.valueOf(request.getExpenseDate()));
@@ -409,24 +354,18 @@ public class ExpenseDao {
             } else {
                 throw new WarehouseException(ErrorMessage.INSERT_EXPENSE_FAIL);
             }
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public int updateExpense(ExpenseEditDto request) {
+    public int updateExpense(Connection con, ExpenseEditDto request) {
         String query = new StringBuilder()
                 .append("UPDATE expense ")
                 .append("SET expense_date = ? , category_id = ? , expense_amount = ? , description = ? , payment_method = ? ")
                 .append("WHERE id = ? ").toString();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setAutoCommit(false);
 
             pstmt.setDate(1, java.sql.Date.valueOf(request.getExpenseDate()));
             pstmt.setInt(2, request.getCategoryId());
@@ -442,24 +381,17 @@ public class ExpenseDao {
             } else {
                 throw new WarehouseException(ErrorMessage.UPDATE_EXPENSE_FAIL);
             }
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
         }
     }
 
-    public int deleteExpense(int expenseId) {
+    public int deleteExpense(Connection con, int expenseId) {
         String query = new StringBuilder()
                 .append("DELETE FROM expense ")
                 .append("WHERE id = ? ").toString();
 
-        Connection con = null;
         try (PreparedStatement pstmt = con.prepareStatement(query)) {
-            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
-            con.setAutoCommit(false);
-
             pstmt.setInt(1, expenseId);
 
             if (pstmt.executeUpdate() == 1) {
@@ -468,19 +400,6 @@ public class ExpenseDao {
                 return 1;
             } else {
                 throw new WarehouseException(ErrorMessage.DELETE_EXPENSE_FAIL);
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            connectionClose(con);
-        }
-    }
-
-    private void connectionClose(Connection con) {
-        try {
-            if (con != null) {
-                con.close();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
