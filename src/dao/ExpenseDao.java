@@ -7,6 +7,7 @@ import domain.Warehouse;
 import dto.ExpenseEditDto;
 import dto.ExpenseSaveDto;
 import dto.ProfitDto;
+import dto.TotalAssetDto;
 import exception.ErrorMessage;
 import exception.WarehouseException;
 
@@ -102,13 +103,101 @@ public class ExpenseDao {
         }
     }
 
+    public List<Expense> findAllByCategory(Integer categoryId) {
+        String query = new StringBuilder()
+                .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
+                .append("FROM expense e ")
+                .append("JOIN expense_category ec ON e.category_id = ec.id ")
+                .append("JOIN warehouse w ON e.warehouse_id = w.id ")
+                .append("WHERE ec.id = ? ")
+                .append("ORDER BY e.id ").toString();
+
+        List<Expense> expenses = new ArrayList<>();
+
+        Connection con = null;
+        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
+            con.setReadOnly(true);
+
+            pstmt.setInt(1, categoryId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    expenses.add(Expense.builder()
+                            .id(rs.getInt("e.id"))
+                            .warehouse(Warehouse.builder()
+                                    .name(rs.getString("w.name"))
+                                    .build())
+                            .expenseDate(rs.getDate("expense_date").toLocalDate())
+                            .category(ExpenseCategory.builder()
+                                    .name(rs.getString("ec.name"))
+                                    .build())
+                            .expenseAmount(rs.getDouble("expense_amount"))
+                            .description(rs.getString("description"))
+                            .payment_method(rs.getString("payment_method"))
+                            .build());
+                }
+                return expenses;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            connectionClose(con);
+        }
+    }
+
+    public List<Expense> findByCategory(Integer userId, Integer categoryId) {
+        String query = new StringBuilder()
+                .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
+                .append("FROM expense e ")
+                .append("JOIN expense_category ec ON e.category_id = ec.id ")
+                .append("JOIN warehouse w ON e.warehouse_id = w.id ")
+                .append("JOIN User u ON w.manager_id = u.role_id ")
+                .append("WHERE u.role_id = ? AND ec.id = ? ")
+                .append("ORDER BY e.id ").toString();
+
+        List<Expense> expenses = new ArrayList<>();
+
+        Connection con = null;
+        try (PreparedStatement pstmt = con.prepareStatement(query)) {
+            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
+            con.setReadOnly(true);
+
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2, categoryId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    expenses.add(Expense.builder()
+                            .id(rs.getInt("e.id"))
+                            .warehouse(Warehouse.builder()
+                                    .name(rs.getString("w.name"))
+                                    .build())
+                            .expenseDate(rs.getDate("expense_date").toLocalDate())
+                            .category(ExpenseCategory.builder()
+                                    .name(rs.getString("ec.name"))
+                                    .build())
+                            .expenseAmount(rs.getDouble("expense_amount"))
+                            .description(rs.getString("description"))
+                            .payment_method(rs.getString("payment_method"))
+                            .build());
+                }
+                return expenses;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            connectionClose(con);
+        }
+    }
+
     public List<Expense> findAllByYear(Integer year) {
         String query = new StringBuilder()
                 .append("SELECT e.id, w.name, expense_date, ec.name, expense_amount, description, payment_method ")
                 .append("FROM expense e ")
                 .append("JOIN expense_category ec ON e.category_id = ec.id ")
                 .append("JOIN warehouse w ON e.warehouse_id = w.id ")
-                .append("WHERE SUBSTR(expense_date, 1, 4) = ? ")
+                .append("WHERE YEAR(expense_date) = ? ")
                 .append("ORDER BY e.id ").toString();
 
         List<Expense> expenses = new ArrayList<>();
@@ -152,7 +241,7 @@ public class ExpenseDao {
                 .append("JOIN expense_category ec ON e.category_id = ec.id ")
                 .append("JOIN warehouse w ON e.warehouse_id = w.id ")
                 .append("JOIN User u ON w.manager_id = u.role_id ")
-                .append("WHERE u.role_id = ? AND SUBSTR(expense_date, 1, 4) = ? ")
+                .append("WHERE u.role_id = ? AND YEAR(expense_date) = ? ")
                 .append("ORDER BY e.id ").toString();
 
         List<Expense> expenses = new ArrayList<>();
@@ -255,6 +344,46 @@ public class ExpenseDao {
         }
     }
 
+    public TotalAssetDto findTotalAsset() {
+        String query = new StringBuilder()
+                .append("WITH year_sum_expense AS ( ")
+                .append("SELECT YEAR(expense_date) AS year1, SUM(expense_amount) AS sum_expense ")
+                .append("FROM expense ")
+                .append("GROUP BY year1), ")
+                .append("year_sum_profit AS ( ")
+                .append("SELECT YEAR(contract_date) AS year2, SUM(price_per_area * capacity * contract_month) AS sum_profit ")
+                .append("FROM warehouse_contract wc ")
+                .append("JOIN warehouse w ON wc.warehouse_id = w.id ")
+                .append("GROUP BY year2), ")
+                .append("ranked AS( ")
+                .append("SELECT yse.year1, yse.sum_expense, ysp.sum_profit, (ysp.sum_profit - yse.sum_expense)AS net_profit, ROW_NUMBER()OVER(ORDER BY yse.year1)AS rn ")
+                .append("FROM year_sum_expense yse ")
+                .append("JOIN year_sum_profit ysp ON yse.year1 = ysp.year2 ) ")
+                .append("SELECT sum_expense, sum_profit, net_profit, ")
+                .append("((SELECT net_profit FROM ranked WHERE rn = 2) - ")
+                .append("(SELECT net_profit FROM ranked WHERE rn = 1)) / (SELECT net_profit FROM ranked WHERE rn = 1) * 100 AS net_profit_per ")
+                .append("FROM ranked; ").toString();
+
+        Connection con = null;
+        try (PreparedStatement pstmt = con.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+            con = DriverManagerDBConnectionUtil.getInstance().getConnection();
+            con.setReadOnly(true);
+            rs.next();
+            rs.next();
+            return TotalAssetDto.builder()
+                    .sumExpense(rs.getDouble("sum_expense"))
+                    .sumProfit(rs.getDouble("sum_profit"))
+                    .netProfit(rs.getDouble("net_profit"))
+                    .netProfitPer(rs.getDouble("net_profit_per"))
+                    .build();
+        } catch (
+                SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            connectionClose(con);
+        }
+    }
 
     public int saveExpense(ExpenseSaveDto request) {
         String query = new StringBuilder()

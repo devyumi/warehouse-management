@@ -6,10 +6,12 @@ import domain.User;
 import dto.ExpenseEditDto;
 import dto.ExpenseSaveDto;
 import dto.ProfitDto;
+import dto.TotalAssetDto;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,6 +36,24 @@ public class ExpenseService {
 
             case "WAREHOUSE_MANAGER" -> {
                 printExpenses(expenseDao.findById(user.getId()));
+            }
+        }
+    }
+
+    /**
+     * 지출 조회 (필터링: 지출 구분)
+     *
+     * @User: 총 관리자, 창고 관리자
+     */
+    public void findExpensesByCategory(User user) throws IOException {
+        switch (user.getRoleType().toString()) {
+
+            case "ADMIN" -> {
+                printExpenses(expenseDao.findAllByCategory(createValidCategoryId()));
+            }
+
+            case "WAREHOUSE_MANAGER" -> {
+                printExpenses(expenseDao.findByCategory(user.getId(), createValidCategoryId()));
             }
         }
 
@@ -73,6 +93,15 @@ public class ExpenseService {
                 printProfits(expenseDao.findProfitById(user.getId()));
             }
         }
+    }
+
+    /**
+     * 총정산 내역 조회 (지출계, 매출계, 순수익, 순수익 증감률)
+     *
+     * @User: 총 관리자
+     */
+    public void findTotalAsset() {
+        printTotalAsset(expenseDao.findTotalAsset());
     }
 
     /**
@@ -326,23 +355,37 @@ public class ExpenseService {
         for (Expense expense : expenses) {
             System.out.printf("%-5d | %-10s | %d-%d-%d | %-10s | %-10.0f원 | %-50s | %-10s\n",
                     expense.getId(), expense.getWarehouse().getName(),
-                    expense.getExpenseDate().getYear(), expense.getExpenseDate().getMonth(), expense.getExpenseDate().getDayOfMonth(),
+                    expense.getExpenseDate().getYear(), expense.getExpenseDate().getMonthValue(), expense.getExpenseDate().getDayOfMonth(),
                     expense.getCategory().getName(), expense.getExpenseAmount(), expense.getDescription(), expense.getPayment_method());
         }
     }
 
     private void printProfits(List<ProfitDto> profits) {
-//        System.out.print("\n\n" + "*".repeat(80) + " [매출 현황] " + "*".repeat(80) + "\n");
-//        System.out.println("-".repeat(170));
-//        System.out.printf("%-5s| %-10s | %-20s | %20s\n",
-//                "번호", "창고명", "계약일", "매출금액");
-//        System.out.println("-".repeat(170));
-//
-//        for (ProfitDto profit : profits) {
-//            System.out.printf("%-5d | %-10s | %d-%d-%d | %-10s | %-10.0f원 | %-50s | %-10s\n",
-//                    expense.getId(), expense.getWarehouse().getName(),
-//                    expense.getExpenseDate().getYear(), expense.getExpenseDate().getMonth(), expense.getExpenseDate().getDayOfMonth(),
-//                    expense.getCategory().getName(), expense.getExpenseAmount(), expense.getDescription(), expense.getPayment_method());
-//        }
+        System.out.print("\n\n" + "*".repeat(80) + " [매출 현황] " + "*".repeat(80) + "\n");
+        System.out.println("-".repeat(170));
+        System.out.printf("%-5s| %-10s | %-20s | %20s\n",
+                "번호", "창고명", "계약일", "매출금액");
+        System.out.println("-".repeat(170));
+
+        for (ProfitDto profit : profits) {
+            System.out.printf("%-5d | %-10s | %d-%d-%d | %-10s원\n",
+                    profit.getId(), profit.getName(),
+                    profit.getContractDate().getYear(), profit.getContractDate().getMonthValue(), profit.getContractDate().getDayOfMonth(),
+                    new DecimalFormat("###,###").format(profit.getProfit()));
+        }
+    }
+
+    private void printTotalAsset(TotalAssetDto asset) {
+        System.out.print("\n\n" + "*".repeat(80) + " [2024년 총정산] " + "*".repeat(80) + "\n");
+        System.out.println("-".repeat(170));
+        System.out.printf("%-20s| %-20s | %-20s | %-20s\n",
+                "지출계", "매출계", "순수익", "순수익 증감률");
+        System.out.println("-".repeat(170));
+
+        System.out.printf("%-20.0s원 | %-20.0s원 | %-20.0s원 | %-20.2f%%\n",
+                new DecimalFormat("###,###").format(asset.getSumExpense()),
+                new DecimalFormat("###,###").format(asset.getSumProfit()),
+                new DecimalFormat("###,###").format(asset.getNetProfit()),
+                asset.getNetProfitPer());
     }
 }
