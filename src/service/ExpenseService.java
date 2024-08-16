@@ -499,9 +499,7 @@ public class ExpenseService {
      * 숫자를 입력 받을 때 문자, 공백, 특수문자가 포함되어 있는지 확인함
      */
     private boolean isNotNumber(String input) {
-        return input.matches("^[a-zA-Z가-힣]*$") ||
-                input.matches("^[!@#$%^&*()\\[\\]\\-_+=|/\\?><.,~`;:'\"]*$") ||
-                input.matches("^[\\t\\n\\f\\r\\s]*$");
+        return !input.matches("^[0-9]+$");
     }
 
     /**

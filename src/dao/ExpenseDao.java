@@ -386,7 +386,7 @@ public class ExpenseDao {
         }
     }
 
-    public int deleteExpense(Connection con, int expenseId) {
+    public int deleteExpense(Connection con, Integer expenseId) {
         String query = new StringBuilder()
                 .append("DELETE FROM expense ")
                 .append("WHERE id = ? ").toString();
