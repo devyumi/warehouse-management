@@ -7,8 +7,6 @@ import dto.ExpenseEditDto;
 import dto.ExpenseSaveDto;
 import dto.ProfitDto;
 import dto.TotalAssetDto;
-import exception.ErrorMessage;
-import exception.WarehouseException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -352,7 +350,7 @@ public class ExpenseDao {
                 System.out.println("지출이 등록되었습니다.");
                 return 1;
             } else {
-                throw new WarehouseException(ErrorMessage.INSERT_EXPENSE_FAIL);
+                throw new RuntimeException("지출을 등록할 수 없습니다.");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -379,7 +377,7 @@ public class ExpenseDao {
                 System.out.println("지출 내역이 수정되었습니다.");
                 return 1;
             } else {
-                throw new WarehouseException(ErrorMessage.UPDATE_EXPENSE_FAIL);
+                throw new RuntimeException("해당 지출 내역을 수정할 수 없습니다.");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -399,7 +397,7 @@ public class ExpenseDao {
                 System.out.println("지출 내역이 삭제되었습니다.");
                 return 1;
             } else {
-                throw new WarehouseException(ErrorMessage.DELETE_EXPENSE_FAIL);
+                throw new RuntimeException("해당 지출 내역을 삭제할 수 없습니다.");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

@@ -3,8 +3,6 @@ package dao;
 import domain.Stock;
 import dto.StockDto;
 import dto.StockEditDto;
-import exception.ErrorMessage;
-import exception.WarehouseException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -181,7 +179,7 @@ public class StockDao {
                 System.out.println("재고가 등록되었습니다.");
                 return 1;
             } else {
-                throw new WarehouseException(ErrorMessage.INSERT_STOCK_FAIL);
+                throw new RuntimeException("재고를 등록할 수 없습니다.");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -206,7 +204,7 @@ public class StockDao {
                 System.out.println("재고 내역이 수정되었습니다.");
                 return 1;
             } else {
-                throw new WarehouseException(ErrorMessage.UPDATE_STOCK_FAIL);
+                throw new RuntimeException("해당 재고를 수정할 수 없습니다.");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -227,7 +225,7 @@ public class StockDao {
                 System.out.println("재고 내역이 삭제되었습니다.");
                 return 1;
             } else {
-                throw new WarehouseException(ErrorMessage.DELETE_STOCK_FAIL);
+                throw new RuntimeException("해당 재고를 삭제할 수 없습니다.");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

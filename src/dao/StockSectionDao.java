@@ -1,8 +1,5 @@
 package dao;
 
-import exception.ErrorMessage;
-import exception.WarehouseException;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -21,7 +18,7 @@ public class StockSectionDao {
                 System.out.println("재고 위치 정보가 삭제되었습니다.");
                 return 1;
             } else {
-                throw new WarehouseException(ErrorMessage.DELETE_STOCK_SECTION_FAIL);
+                throw new RuntimeException("해당 재고의 위치 정보를 삭제할 수 없습니다.");
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
