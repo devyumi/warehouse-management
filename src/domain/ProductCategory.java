@@ -8,5 +8,5 @@ import lombok.Data;
 public class ProductCategory {
     private Integer id;
     private String name;
-    private Integer parent_id;
+    private Integer parentId;
 }

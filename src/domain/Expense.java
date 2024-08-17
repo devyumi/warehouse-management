@@ -12,10 +12,10 @@ public class Expense {
     private Integer id;
     private Warehouse warehouse;
     private LocalDate expenseDate;
-    private ExpenseCategory category;
+    private ExpenseCategory expenseCategory;
     private Double expenseAmount;
     private String description;
-    private String payment_method;
+    private String paymentMethod;
     private LocalDateTime regDate;
     private LocalDateTime modDate;
 }

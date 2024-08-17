@@ -37,12 +37,12 @@ public class ExpenseDao {
                                 .name(rs.getString("w.name"))
                                 .build())
                         .expenseDate(rs.getDate("expense_date").toLocalDate())
-                        .category(ExpenseCategory.builder()
+                        .expenseCategory(ExpenseCategory.builder()
                                 .name(rs.getString("ec.name"))
                                 .build())
                         .expenseAmount(rs.getDouble("expense_amount"))
                         .description(rs.getString("description"))
-                        .payment_method(rs.getString("payment_method"))
+                        .paymentMethod(rs.getString("payment_method"))
                         .build());
             }
             return expenses;
@@ -74,12 +74,12 @@ public class ExpenseDao {
                                     .name(rs.getString("w.name"))
                                     .build())
                             .expenseDate(rs.getDate("expense_date").toLocalDate())
-                            .category(ExpenseCategory.builder()
+                            .expenseCategory(ExpenseCategory.builder()
                                     .name(rs.getString("ec.name"))
                                     .build())
                             .expenseAmount(rs.getDouble("expense_amount"))
                             .description(rs.getString("description"))
-                            .payment_method(rs.getString("payment_method"))
+                            .paymentMethod(rs.getString("payment_method"))
                             .build());
                 }
                 return expenses;
@@ -112,12 +112,12 @@ public class ExpenseDao {
                                     .name(rs.getString("w.name"))
                                     .build())
                             .expenseDate(rs.getDate("expense_date").toLocalDate())
-                            .category(ExpenseCategory.builder()
+                            .expenseCategory(ExpenseCategory.builder()
                                     .name(rs.getString("ec.name"))
                                     .build())
                             .expenseAmount(rs.getDouble("expense_amount"))
                             .description(rs.getString("description"))
-                            .payment_method(rs.getString("payment_method"))
+                            .paymentMethod(rs.getString("payment_method"))
                             .build());
                 }
                 return expenses;
@@ -152,12 +152,12 @@ public class ExpenseDao {
                                     .name(rs.getString("w.name"))
                                     .build())
                             .expenseDate(rs.getDate("expense_date").toLocalDate())
-                            .category(ExpenseCategory.builder()
+                            .expenseCategory(ExpenseCategory.builder()
                                     .name(rs.getString("ec.name"))
                                     .build())
                             .expenseAmount(rs.getDouble("expense_amount"))
                             .description(rs.getString("description"))
-                            .payment_method(rs.getString("payment_method"))
+                            .paymentMethod(rs.getString("payment_method"))
                             .build());
                 }
                 return expenses;
@@ -189,12 +189,12 @@ public class ExpenseDao {
                                     .name(rs.getString("w.name"))
                                     .build())
                             .expenseDate(rs.getDate("expense_date").toLocalDate())
-                            .category(ExpenseCategory.builder()
+                            .expenseCategory(ExpenseCategory.builder()
                                     .name(rs.getString("ec.name"))
                                     .build())
                             .expenseAmount(rs.getDouble("expense_amount"))
                             .description(rs.getString("description"))
-                            .payment_method(rs.getString("payment_method"))
+                            .paymentMethod(rs.getString("payment_method"))
                             .build());
                 }
             }
@@ -229,12 +229,12 @@ public class ExpenseDao {
                                     .name(rs.getString("w.name"))
                                     .build())
                             .expenseDate(rs.getDate("expense_date").toLocalDate())
-                            .category(ExpenseCategory.builder()
+                            .expenseCategory(ExpenseCategory.builder()
                                     .name(rs.getString("ec.name"))
                                     .build())
                             .expenseAmount(rs.getDouble("expense_amount"))
                             .description(rs.getString("description"))
-                            .payment_method(rs.getString("payment_method"))
+                            .paymentMethod(rs.getString("payment_method"))
                             .build());
                 }
                 return expenses;
