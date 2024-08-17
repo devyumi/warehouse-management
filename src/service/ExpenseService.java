@@ -539,7 +539,7 @@ public class ExpenseService {
             System.out.printf("%-5d%-10s%-15s%-15s%-20s%-30s%10s\n",
                     expense.getId(), expense.getWarehouse().getName(),
                     new SimpleDateFormat("yyyy-MM-dd").format(Date.valueOf(expense.getExpenseDate())),
-                    expense.getCategory().getName(), new DecimalFormat("###,###원").format(expense.getExpenseAmount()), expense.getDescription(), expense.getPayment_method());
+                    expense.getExpenseCategory().getName(), new DecimalFormat("###,###원").format(expense.getExpenseAmount()), expense.getDescription(), expense.getPaymentMethod());
         }
     }
 
