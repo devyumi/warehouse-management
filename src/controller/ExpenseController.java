@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public class ExpenseController {
-    private static final ExpenseService expenseService = new ExpenseService();
+    private final ExpenseService expenseService = new ExpenseService();
     private static final WarehouseService warehouseService = new WarehouseService();
     private static final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 

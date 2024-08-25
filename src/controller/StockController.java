@@ -21,9 +21,9 @@ import java.util.List;
 
 public class StockController {
 
-    private static final StockService stockService = new StockService();
-    private static final ProductService productService = new ProductService();
-    private static final StockLogService stockLogService = new StockLogService();
+    private final StockService stockService = new StockService();
+    private final ProductService productService = new ProductService();
+    private final StockLogService stockLogService = new StockLogService();
     private static final ProductCategoryService productCategoryService = new ProductCategoryService();
     private static final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
